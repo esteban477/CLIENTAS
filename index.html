@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DyC Cosméticos - Gestión de Clientes y Reportes</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Estilos para el modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 32rem; /* max-w-md */
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-pink-50 flex flex-col">
+
+    <!-- Barra de navegación -->
+    <nav class="bg-gradient-to-r from-pink-500 to-purple-600 p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-white text-3xl font-bold rounded-lg p-2 transform transition-transform duration-300 hover:scale-105">
+                DyC Cosméticos
+            </h1>
+        </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <main class="flex-grow container mx-auto p-8 flex flex-col items-center justify-start">
+
+        <!-- Selector de Vista -->
+        <div class="w-full mb-6 flex justify-center gap-4">
+            <button id="clientsViewBtn" class="px-6 py-3 rounded-full font-bold text-lg transition-all duration-300 bg-pink-600 text-white shadow-md">
+                Gestión de Clientes
+            </button>
+            <button id="reportsViewBtn" class="px-6 py-3 rounded-full font-bold text-lg transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                Reportes y Estadísticas
+            </button>
+        </div>
+
+        <div id="appContent" class="bg-white p-10 rounded-xl shadow-2xl max-w-6xl w-full flex flex-col lg:flex-row gap-8">
+            <!-- Contenido cargado dinámicamente por JavaScript -->
+        </div>
+
+    </main>
+
+    <!-- Pie de página -->
+    <footer class="bg-gray-800 text-white p-6 text-center shadow-inner">
+        <div class="container mx-auto">
+            <p class="text-sm">
+                &copy; <span id="currentYear"></span> DyC Cosméticos. Todos los derechos reservados.
+            </p>
+            <p class="text-xs mt-2">
+                ID de Usuario: <span id="userIdDisplay" class="font-mono text-pink-300">Cargando...</span>
+            </p>
+            <p class="text-xs mt-2">
+                Hecho con ❤️ y JavaScript.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Modales (ocultos por defecto) -->
+    <div id="clientEditModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-3xl font-bold text-pink-800 mb-6 text-center">Editar Cliente: <span id="editClientNameModal"></span></h3>
+            <div class="flex flex-col gap-4">
+                <input type="text" id="editClientNameInput" placeholder="Nombre del Cliente" class="p-3 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-800" />
+                <input type="text" id="editClientCelularInput" placeholder="Número de Celular" class="p-3 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-800" />
+                <select id="editClientCitySelect" class="p-3 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-800">
+                    <option value="">Selecciona una Ciudad</option>
+                </select>
+                <input type="text" id="editClientNewCityInput" placeholder="Nombre de la Nueva Ciudad" class="p-3 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-800 hidden" />
+                <div class="flex justify-end gap-4 mt-4">
+                    <button id="cancelEditClientBtn" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-full shadow-md transform transition-all duration-300 hover:scale-105">
+                        Cancelar
+                    </button>
+                    <button id="saveEditedClientBtn" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-full shadow-md transform transition-all duration-300 hover:scale-105">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="orderEditModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-3xl font-bold text-purple-800 mb-6 text-center">Editar Pedido</h3>
+            <div class="flex flex-col gap-4">
+                <input type="text" id="editOrderDescriptionInput" placeholder="Descripción del Pedido" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800" />
+                <input type="number" id="editOrderAmountInput" placeholder="Monto" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800" />
+                <input type="date" id="editOrderDateInput" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800" />
+                <div class="flex justify-end gap-4 mt-4">
+                    <button id="cancelEditOrderBtn" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-full shadow-md transform transition-all duration-300 hover:scale-105">
+                        Cancelar
+                    </button>
+                    <button id="saveEditedOrderBtn" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transform transition-all duration-300 hover:scale-105">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="paymentEditModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-3xl font-bold text-purple-800 mb-6 text-center">Editar Pago</h3>
+            <div class="flex flex-col gap-4">
+                <input type="number" id="editPaymentAmountInput" placeholder="Monto del Pago" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800" />
+                <input type="date" id="editPaymentDateInput" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800" />
+                <div class="flex justify-end gap-4 mt-4">
+                    <button id="cancelEditPaymentBtn" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-full shadow-md transform transition-all duration-300 hover:scale-105">
+                        Cancelar
+                    </button>
+                    <button id="saveEditedPaymentBtn" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transform transition-all duration-300 hover:scale-105">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, doc, updateDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Global variables for Firebase instances and data
+        let db;
+        let auth;
+        let userId;
+        let clients = [];
+        let selectedClient = null;
+        let cities = [];
+        let orders = [];
+        let payments = [];
+
+        // Variables para los modales de edición
+        let editingClient = null;
+        let editingOrder = null;
+        let editingPayment = null;
+
+        // Variables para filtros de clientes
+        let filterCity = '';
+        let searchName = '';
+
+        // Variables para filtros de reportes
+        let reportStartDate;
+        let reportEndDate;
+        let selectedReportClient = '';
+
+        // Helper para obtener la fecha de hoy en formato YYYY-MM-DD
+        const getTodayDate = () => {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        // Initialize Firebase and authentication
+        const initFirebase = async () => {
+            try {
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                    } else {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                        userId = auth.currentUser?.uid || crypto.randomUUID(); // Fallback if anonymous fails or not yet set
+                    }
+                    document.getElementById('userIdDisplay').textContent = userId;
+                    // Start listening to data once Firebase is ready
+                    startFirestoreListeners();
+                    renderCurrentView(); // Render initial view after auth
+                });
+
+                document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+            } catch (error) {
+                console.error("Error al inicializar Firebase:", error);
+                document.getElementById('userIdDisplay').textContent = 'Error de carga';
+            }
+        };
+
+        // Start real-time listeners for Firestore data
+        const startFirestoreListeners = () => {
+            if (!db || !userId) return;
+
+            // Clients listener
+            const clientsCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/clients`);
+            onSnapshot(clientsCollectionRef, (snapshot) => {
+                let clientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                clientsData.sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+                clients = clientsData;
+                renderClientList(); // Re-render client list on data change
+                // If selected client is deleted, deselect
+                if (selectedClient && !clients.some(c => c.id === selectedClient.id)) {
+                    selectedClient = null;
+                    renderClientDetailsSection();
+                }
+                // Re-render reports if client data changes (for client balances)
+                if (document.getElementById('reportsViewBtn').classList.contains('bg-purple-600')) {
+                    renderReports();
+                }
+            }, (error) => {
+                console.error("Error al obtener clientes en tiempo real:", error);
+            });
+
+            // Cities listener
+            const citiesCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/cities`);
+            onSnapshot(citiesCollectionRef, (snapshot) => {
+                const citiesData = snapshot.docs.map(doc => doc.data().name);
+                citiesData.sort((a, b) => a.localeCompare(b));
+                cities = citiesData;
+                // Update city dropdowns if they are visible
+                renderClientManagementView(); // Re-render to update city dropdowns
+            }, (error) => {
+                console.error("Error al obtener ciudades en tiempo real:", error);
+            });
+        };
+
+        // Listener for selected client's orders
+        const startOrdersListener = (clientId) => {
+            if (!db || !userId || !clientId) {
+                orders = [];
+                renderUnifiedHistory();
+                return;
+            }
+            const ordersCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/clients/${clientId}/orders`);
+            onSnapshot(ordersCollectionRef, (snapshot) => {
+                orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderUnifiedHistory(); // Re-render history when orders change
+            }, (error) => {
+                console.error("Error al obtener pedidos en tiempo real:", error);
+            });
+        };
+
+        // Listener for selected client's payments
+        const startPaymentsListener = (clientId) => {
+            if (!db || !userId || !clientId) {
+                payments = [];
+                renderUnifiedHistory();
+                return;
+            }
+            const paymentsCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/clients/${clientId}/payments`);
+            onSnapshot(paymentsCollectionRef, (snapshot) => {
+                payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderUnifiedHistory(); // Re-render history when payments change
+            }, (error) => {
+                console.error("Error al obtener pagos en tiempo real:", error);
+            });
+        };
+
+        // Función para actualizar el saldo del cliente
+        const updateClientBalance = async (clientId, amountChange) => {
+            if (!db || !userId || !clientId) return;
+            const clientRef = doc(db, `artifacts/${__app_id}/users/${userId}/clients/${clientId}`);
+            try {
+                const clientDoc = await getDoc(clientRef);
+                if (clientDoc.exists()) {
+                    const currentBalance = clientDoc.data().balance || 0;
+                    await updateDoc(clientRef, {
+                        balance: currentBalance + amountChange
+                    });
+                }
+            } catch (e) {
+                console.error("Error al actualizar el saldo del cliente: ", e);
+            }
+        };
+
+        // Función para añadir una nueva ciudad si no existe
+        const addCityIfNotExists = async (cityName) => {
+            if (!db || !userId || !cityName.trim()) return;
+            const citiesCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/cities`);
+            const q = query(citiesCollectionRef);
+            const querySnapshot = await getDocs(q);
+            const existingCities = querySnapshot.docs.map(doc => doc.data().name.toLowerCase());
+
+            if (!existingCities.includes(cityName.trim().toLowerCase())) {
+                await addDoc(citiesCollectionRef, { name: cityName.trim() });
+                console.log(`Ciudad '${cityName.trim()}' añadida.`);
+            }
+        };
+
+        // --- Render Functions ---
+
+        // Renders the client management view
+        const renderClientManagementView = () => {
+            const appContent = document.getElementById('appContent');
+            appContent.innerHTML = `
+                <!-- Client Management Column -->
+                <div class="lg:w-1/3 w-full bg-pink-50 p-6 rounded-lg shadow-inner flex flex-col">
+                    <h2 class="text-4xl font-extrabold text-pink-800 mb-6 text-center">Clientes</h2>
+
+                    <!-- Form to add new client -->
+                    <div class="mb-6 pb-4 border-b border-pink-200">
+                        <h3 class="text-2xl font-bold text-pink-700 mb-3">Añadir Cliente</h3>
+                        <div class="flex flex-col gap-3">
+                            <input type="text" id="newClientName" placeholder="Nombre del Cliente (Obligatorio)" class="p-3 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-800" />
+                            <input type="text" id="newClientCelular" placeholder="Número de Celular (Opcional)" class="p-3 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-800" />
+                            <select id="newClientCitySelect" class="p-3 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-800">
+                                <option value="">Selecciona una Ciudad (Opcional)</option>
+                            </select>
+                            <input type="text" id="newClientCityInput" placeholder="Nombre de la Nueva Ciudad" class="p-3 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-800 hidden" />
+                            <button id="addClientBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transform transition-all duration-300 hover:scale-105">Añadir Cliente</button>
+                        </div>
+                    </div>
+
+                    <!-- Client Filters -->
+                    <div class="mb-6 p-4 bg-pink-100 rounded-lg shadow-sm">
+                        <h3 class="text-2xl font-bold text-pink-700 mb-3">Filtrar Clientes</h3>
+                        <div class="flex flex-col gap-3">
+                            <input type="text" id="searchNameInput" placeholder="Buscar por Nombre..." class="p-3 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-800" />
+                            <select id="filterCitySelect" class="p-3 border border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-gray-800">
+                                <option value="">Todas las Ciudades</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Client List -->
+                    <h3 class="text-2xl font-bold text-pink-700 mb-4 text-center">Tus Clientes</h3>
+                    <div id="clientList" class="flex-grow overflow-y-auto max-h-96">
+                        <!-- Client items will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Selected Client Details Column -->
+                <div id="clientDetailsColumn" class="lg:w-2/3 w-full bg-purple-50 p-6 rounded-lg shadow-inner relative">
+                    <!-- Details will be rendered here -->
+                </div>
+            `;
+
+            // Populate city dropdowns
+            const newClientCitySelect = document.getElementById('newClientCitySelect');
+            const filterCitySelect = document.getElementById('filterCitySelect');
+            newClientCitySelect.innerHTML = '<option value="">Selecciona una Ciudad (Opcional)</option>';
+            filterCitySelect.innerHTML = '<option value="">Todas las Ciudades</option>';
+            cities.forEach(city => {
+                const option1 = document.createElement('option');
+                option1.value = city;
+                option1.textContent = city;
+                newClientCitySelect.appendChild(option1);
+
+                const option2 = document.createElement('option');
+                option2.value = city;
+                option2.textContent = city;
+                filterCitySelect.appendChild(option2);
+            });
+
+            // Set current filter values
+            document.getElementById('searchNameInput').value = searchName;
+            document.getElementById('filterCitySelect').value = filterCity;
+
+            // Add event listeners for client management
+            document.getElementById('addClientBtn').onclick = addClient;
+            document.getElementById('newClientCitySelect').onchange = (e) => {
+                const newClientCityInput = document.getElementById('newClientCityInput');
+                if (e.target.value === 'addNewCity') {
+                    newClientCityInput.classList.remove('hidden');
+                } else {
+                    newClientCityInput.classList.add('hidden');
+                }
+            };
+            document.getElementById('searchNameInput').oninput = (e) => {
+                searchName = e.target.value;
+                renderClientList();
+            };
+            document.getElementById('filterCitySelect').onchange = (e) => {
+                filterCity = e.target.value;
+                renderClientList();
+            };
+
+            renderClientList(); // Initial render of client list
+            renderClientDetailsSection(); // Initial render of client details (empty or selected)
+        };
+
+        // Renders the list of clients
+        const renderClientList = () => {
+            const clientListDiv = document.getElementById('clientList');
+            clientListDiv.innerHTML = ''; // Clear existing list
+
+            let filteredClients = clients;
+
+            // Apply city filter
+            if (filterCity) {
+                filteredClients = filteredClients.filter(client => client.city === filterCity);
+            }
+
+            // Apply name filter
+            if (searchName) {
+                filteredClients = filteredClients.filter(client =>
+                    client.name.toLowerCase().includes(searchName.toLowerCase())
+                );
+            }
+
+            if (filteredClients.length === 0) {
+                clientListDiv.innerHTML = '<p class="text-center text-gray-600">No hay clientes registrados que coincidan con los filtros.</p>';
+                return;
+            }
+
+            filteredClients.forEach(client => {
+                const clientDiv = document.createElement('div');
+                clientDiv.className = `flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 mb-2 rounded-lg shadow-md cursor-pointer transition-all duration-200
+                    ${selectedClient && selectedClient.id === client.id ? 'bg-pink-200 border-2 border-pink-600' : 'bg-white hover:bg-pink-100'}`;
+                clientDiv.innerHTML = `
+                    <div class="flex-grow">
+                        <span class="font-medium text-gray-800 text-lg block">${client.name}</span>
+                        <span class="text-gray-600 text-sm italic block">${client.city || 'Sin ciudad'}</span>
+                        ${client.celular ? `<span class="text-gray-600 text-sm block">Cel: ${client.celular}</span>` : ''}
+                    </div>
+                    <div class="flex items-center mt-2 sm:mt-0 space-x-2">
+                        <span class="font-bold text-lg ${client.balance < 0 ? 'text-red-600' : 'text-green-600'}">
+                            $${client.balance.toFixed(2)}
+                        </span>
+                    </div>
+                `;
+                clientDiv.onclick = () => selectClient(client);
+                clientListDiv.appendChild(clientDiv);
+            });
+        };
+
+        // Renders the details section for the selected client
+        const renderClientDetailsSection = () => {
+            const clientDetailsColumn = document.getElementById('clientDetailsColumn');
+            if (!selectedClient) {
+                clientDetailsColumn.innerHTML = `
+                    <div class="text-center p-10 bg-purple-100 rounded-lg shadow-md">
+                        <h3 class="text-3xl font-bold text-purple-700 mb-4">Selecciona un Cliente</h3>
+                        <p class="text-lg text-gray-700">Haz clic en un cliente de la lista de la izquierda para ver sus pedidos y pagos, o para añadir nuevos.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            clientDetailsColumn.innerHTML = `
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-4xl font-extrabold text-purple-800 text-center flex-grow">
+                        Detalles de ${selectedClient.name}
+                    </h2>
+                    <div class="relative" id="clientActionsDropdownContainer">
+                        <button id="clientActionsDropdownBtn" class="text-purple-800 hover:text-purple-900 text-4xl font-bold p-2 rounded-full hover:bg-purple-100 transition-colors duration-200" aria-label="Opciones del cliente">
+                            •••
+                        </button>
+                        <div id="clientActionsDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden">
+                            <button id="deleteClientBtn" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                Eliminar Cliente
+                            </button>
+                            <button id="editClientBtn" class="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50">
+                                Editar Cliente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-center text-xl text-gray-700 mb-6">
+                    Saldo Actual: <span class="font-bold ${selectedClient.balance < 0 ? 'text-red-600' : 'text-green-600'}">
+                        $${selectedClient.balance.toFixed(2)}
+                    </span>
+                </p>
+                <button id="changeClientBtn" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-full shadow-md transform transition-all duration-300 hover:scale-105 mb-8 mx-auto block">
+                    Cambiar Cliente
+                </button>
+
+                <!-- Add New Order Section -->
+                <div class="mb-10">
+                    <h3 class="text-3xl font-bold text-purple-700 mb-4 text-center">Añadir Nuevo Pedido</h3>
+                    <div class="mb-6 p-4 bg-purple-100 rounded-lg shadow-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <input type="text" id="newOrderDescription" placeholder="Descripción del Pedido" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800 col-span-2" />
+                            <input type="number" id="newOrderAmount" placeholder="Monto" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800" />
+                            <input type="date" id="newOrderDate" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800" />
+                            <button id="addOrderBtn" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transform transition-all duration-300 hover:scale-105 col-span-full">Añadir Pedido</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add New Payment Section -->
+                <div class="mb-10">
+                    <h3 class="text-3xl font-bold text-purple-700 mb-4 text-center">Registrar Nuevo Pago</h3>
+                    <div class="mb-6 p-4 bg-purple-100 rounded-lg shadow-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input type="number" id="newPaymentAmount" placeholder="Monto del Pago" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800" />
+                            <input type="date" id="newPaymentDate" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800" />
+                            <button id="addPaymentBtn" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transform transition-all duration-300 hover:scale-105 col-span-full">Registrar Pago</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unified History Section -->
+                <div>
+                    <h3 class="text-3xl font-bold text-purple-700 mb-4 text-center">Historial de Movimientos</h3>
+                    <div id="unifiedHistoryTable" class="overflow-x-auto">
+                        <!-- History table will be rendered here -->
+                    </div>
+                </div>
+            `;
+
+            // Set default dates for new order/payment
+            document.getElementById('newOrderDate').value = getTodayDate();
+            document.getElementById('newPaymentDate').value = getTodayDate();
+
+            // Add event listeners for client details section
+            document.getElementById('changeClientBtn').onclick = () => {
+                selectedClient = null;
+                renderClientList(); // Re-render client list to reflect deselection
+                renderClientDetailsSection(); // Clear details section
+            };
+            document.getElementById('addOrderBtn').onclick = addOrder;
+            document.getElementById('addPaymentBtn').onclick = addPayment;
+
+            // Dropdown logic for client actions
+            const clientActionsDropdownBtn = document.getElementById('clientActionsDropdownBtn');
+            const clientActionsDropdown = document.getElementById('clientActionsDropdown');
+            clientActionsDropdownBtn.onclick = (e) => {
+                e.stopPropagation(); // Prevent closing immediately if clicked on button
+                clientActionsDropdown.classList.toggle('hidden');
+            };
+            document.addEventListener('click', (e) => {
+                if (!clientActionsDropdown.contains(e.target) && !clientActionsDropdownBtn.contains(e.target)) {
+                    clientActionsDropdown.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('editClientBtn').onclick = () => openEditClientModal(selectedClient);
+            document.getElementById('deleteClientBtn').onclick = () => deleteClient(selectedClient.id);
+
+            // Start listeners for orders and payments of the selected client
+            startOrdersListener(selectedClient.id);
+            startPaymentsListener(selectedClient.id);
+        };
+
+        // Renders the unified history table
+        const renderUnifiedHistory = () => {
+            const unifiedHistoryTableDiv = document.getElementById('unifiedHistoryTable');
+            const combinedHistory = [
+                ...orders.map(o => ({ ...o, type: 'order', date: o.orderDate, displayAmount: -o.amount })),
+                ...payments.map(p => ({ ...p, type: 'payment', date: p.paymentDate, displayAmount: p.amount }))
+            ].sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date, most recent first
+
+            if (combinedHistory.length === 0) {
+                unifiedHistoryTableDiv.innerHTML = '<p class="text-center text-gray-600">No hay movimientos registrados para este cliente.</p>';
+                return;
+            }
+
+            let tableHtml = `
+                <table class="min-w-full bg-white rounded-lg shadow-md">
+                    <thead class="bg-purple-100">
+                        <tr>
+                            <th class="py-3 px-4 text-left text-sm font-semibold text-purple-700 uppercase tracking-wider rounded-tl-lg">Fecha</th>
+                            <th class="py-3 px-4 text-left text-sm font-semibold text-purple-700 uppercase tracking-wider">Tipo</th>
+                            <th class="py-3 px-4 text-left text-sm font-semibold text-purple-700 uppercase tracking-wider">Descripción / Monto</th>
+                            <th class="py-3 px-4 text-left text-sm font-semibold text-purple-700 uppercase tracking-wider rounded-tr-lg">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            combinedHistory.forEach(item => {
+                tableHtml += `
+                    <tr class="border-b border-purple-100 last:border-b-0 hover:bg-purple-50 transition-colors duration-200">
+                        <td class="py-3 px-4 text-gray-600 text-sm">${new Date(item.date).toLocaleDateString('es-UY')}</td>
+                        <td class="py-3 px-4 text-gray-800">
+                            <span class="font-semibold ${item.type === 'order' ? 'text-red-600' : 'text-green-600'}">
+                                ${item.type === 'order' ? 'Pedido' : 'Pago'}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-gray-800">
+                            ${item.type === 'order' ? item.description : 'Pago recibido'}
+                            <br />
+                            <span class="font-bold ${item.displayAmount < 0 ? 'text-red-600' : 'text-green-600'}">
+                                $${item.displayAmount.toFixed(2)}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 flex space-x-2">
+                            <button data-id="${item.id}" data-type="${item.type}" class="edit-item-btn bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded-full shadow-md transform transition-all duration-300 hover:scale-105">
+                                Editar
+                            </button>
+                            <button data-id="${item.id}" data-amount="${item.amount}" data-type="${item.type}" class="delete-item-btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded-full shadow-md transform transition-all duration-300 hover:scale-105">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                    </tbody>
+                </table>
+            `;
+            unifiedHistoryTableDiv.innerHTML = tableHtml;
+
+            // Add event listeners to dynamically created buttons
+            unifiedHistoryTableDiv.querySelectorAll('.edit-item-btn').forEach(button => {
+                button.onclick = (e) => {
+                    const id = e.target.dataset.id;
+                    const type = e.target.dataset.type;
+                    const item = combinedHistory.find(i => i.id === id && i.type === type);
+                    if (item.type === 'order') {
+                        openEditOrderModal(item);
+                    } else {
+                        openEditPaymentModal(item);
+                    }
+                };
+            });
+            unifiedHistoryTableDiv.querySelectorAll('.delete-item-btn').forEach(button => {
+                button.onclick = (e) => {
+                    const id = e.target.dataset.id;
+                    const amount = parseFloat(e.target.dataset.amount);
+                    const type = e.target.dataset.type;
+                    if (type === 'order') {
+                        deleteOrder(id, amount);
+                    } else {
+                        deletePayment(id, amount);
+                    }
+                };
+            });
+        };
+
+        // Renders the reports section
+        const renderReportsView = () => {
+            const appContent = document.getElementById('appContent');
+            appContent.innerHTML = `
+                <div class="w-full bg-white p-8 rounded-xl shadow-2xl flex flex-col gap-8">
+                    <h2 class="text-4xl font-extrabold text-purple-800 mb-6 text-center">
+                        Reportes y Estadísticas
+                    </h2>
+
+                    <!-- Filters Section -->
+                    <div class="bg-purple-100 p-6 rounded-lg shadow-inner flex flex-col md:flex-row gap-4 items-center justify-center mb-6">
+                        <div class="flex flex-col gap-2 w-full md:w-auto">
+                            <label htmlFor="startDate" class="text-purple-700 font-semibold">Fecha Inicio:</label>
+                            <input type="date" id="reportStartDate" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800" />
+                        </div>
+                        <div class="flex flex-col gap-2 w-full md:w-auto">
+                            <label htmlFor="endDate" class="text-purple-700 font-semibold">Fecha Fin:</label>
+                            <input type="date" id="reportEndDate" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800" />
+                        </div>
+                        <div class="flex flex-col gap-2 w-full md:w-auto">
+                            <label htmlFor="clientFilter" class="text-purple-700 font-semibold">Filtrar por Cliente:</label>
+                            <select id="reportClientFilter" class="p-3 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800">
+                                <option value="">Todos los Clientes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="reportsContent">
+                        <!-- Reports will be rendered here -->
+                    </div>
+                </div>
+            `;
+
+            // Populate client filter for reports
+            const reportClientFilterSelect = document.getElementById('reportClientFilter');
+            reportClientFilterSelect.innerHTML = '<option value="">Todos los Clientes</option>';
+            clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = client.name;
+                reportClientFilterSelect.appendChild(option);
+            });
+
+            // Set default dates for report filters
+            const todayDate = getTodayDate();
+            const thirtyDaysAgo = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0];
+            document.getElementById('reportStartDate').value = reportStartDate || thirtyDaysAgo;
+            document.getElementById('reportEndDate').value = reportEndDate || todayDate;
+            document.getElementById('reportClientFilter').value = selectedReportClient;
+
+            // Add event listeners for report filters
+            document.getElementById('reportStartDate').onchange = (e) => {
+                reportStartDate = e.target.value;
+                renderReports();
+            };
+            document.getElementById('reportEndDate').onchange = (e) => {
+                reportEndDate = e.target.value;
+                renderReports();
+            };
+            document.getElementById('reportClientFilter').onchange = (e) => {
+                selectedReportClient = e.target.value;
+                renderReports();
+            };
+
+            renderReports(); // Initial render of reports
+        };
+
+        // Renders the actual reports data
+        const renderReports = async () => {
+            const reportsContentDiv = document.getElementById('reportsContent');
+            reportsContentDiv.innerHTML = '<p class="text-center text-gray-600 text-xl">Cargando datos de reportes...</p>';
+
+            const fetchedOrders = [];
+            const fetchedPayments = [];
+
+            try {
+                const clientsCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/clients`);
+                const clientsSnapshot = await getDocs(clientsCollectionRef);
+
+                for (const clientDoc of clientsSnapshot.docs) {
+                    const clientId = clientDoc.id;
+                    const clientData = clientDoc.data();
+
+                    const ordersRef = collection(db, `artifacts/${__app_id}/users/${userId}/clients/${clientId}/orders`);
+                    const ordersSnapshot = await getDocs(ordersRef);
+                    ordersSnapshot.forEach(orderDoc => {
+                        fetchedOrders.push({ clientId, clientName: clientData.name, id: orderDoc.id, ...orderDoc.data() });
+                    });
+
+                    const paymentsRef = collection(db, `artifacts/${__app_id}/users/${userId}/clients/${clientId}/payments`);
+                    const paymentsSnapshot = await getDocs(paymentsRef);
+                    paymentsSnapshot.forEach(paymentDoc => {
+                        fetchedPayments.push({ clientId, clientName: clientData.name, id: paymentDoc.id, ...paymentDoc.data() });
+                    });
+                }
+            } catch (error) {
+                console.error("Error al obtener datos para reportes:", error);
+                reportsContentDiv.innerHTML = '<p class="text-center text-red-600 text-xl">Error al cargar reportes.</p>';
+                return;
+            }
+
+            let tempFilteredOrders = fetchedOrders;
+            let tempFilteredPayments = fetchedPayments;
+
+            const start = reportStartDate ? new Date(reportStartDate) : null;
+            const end = reportEndDate ? new Date(reportEndDate) : null;
+
+            if (start) {
+                tempFilteredOrders = tempFilteredOrders.filter(order => new Date(order.orderDate) >= start);
+                tempFilteredPayments = tempFilteredPayments.filter(payment => new Date(payment.paymentDate) >= start);
+            }
+            if (end) {
+                const endDateInclusive = new Date(end);
+                endDateInclusive.setHours(23, 59, 59, 999);
+                tempFilteredOrders = tempFilteredOrders.filter(order => new Date(order.orderDate) <= endDateInclusive);
+                tempFilteredPayments = tempFilteredPayments.filter(payment => new Date(payment.paymentDate) <= endDateInclusive);
+            }
+
+            if (selectedReportClient) {
+                tempFilteredOrders = tempFilteredOrders.filter(order => order.clientId === selectedReportClient);
+                tempFilteredPayments = tempFilteredPayments.filter(payment => payment.clientId === selectedReportClient);
+            }
+
+            const totalSales = tempFilteredOrders.reduce((sum, order) => sum + order.amount, 0);
+            const totalPayments = tempFilteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
+
+            // Data for Sales vs Payments (for simplified pie chart representation)
+            const salesPaymentsData = [];
+            if (totalSales > 0) salesPaymentsData.push({ name: 'Ventas Totales', value: parseFloat(totalSales.toFixed(2)) });
+            if (totalPayments > 0) salesPaymentsData.push({ name: 'Pagos Totales', value: parseFloat(totalPayments.toFixed(2)) });
+
+            // Data for Clients by Current Balance (for simplified pie chart representation)
+            const clientBalancesData = clients
+                .filter(client => {
+                    const hasOrdersInFilteredRange = tempFilteredOrders.some(order => order.clientId === client.id);
+                    const hasPaymentsInFilteredRange = tempFilteredPayments.some(payment => payment.clientId === client.id);
+                    return (selectedReportClient === '' || selectedReportClient === client.id) && (hasOrdersInFilteredRange || hasPaymentsInFilteredRange || client.balance !== 0);
+                })
+                .map(client => ({
+                    name: client.name,
+                    value: parseFloat(client.balance.toFixed(2)),
+                }))
+                .filter(client => client.value !== 0); // Only show clients with non-zero balance
+
+            reportsContentDiv.innerHTML = `
+                <!-- Summary Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-pink-200 p-6 rounded-lg shadow-md text-center">
+                        <h3 class="text-2xl font-bold text-pink-800 mb-2">Total Ventas</h3>
+                        <p class="text-4xl font-extrabold text-pink-900">$${totalSales.toFixed(2)}</p>
+                    </div>
+                    <div class="bg-purple-200 p-6 rounded-lg shadow-md text-center">
+                        <h3 class="text-2xl font-bold text-purple-800 mb-2">Total Pagos</h3>
+                        <p class="text-4xl font-extrabold text-purple-900">$${totalPayments.toFixed(2)}</p>
+                    </div>
+                </div>
+
+                <!-- Sales vs Payments Proportion -->
+                <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                    <h3 class="text-2xl font-bold text-purple-700 mb-4 text-center">Ventas vs. Pagos (Proporción Total)</h3>
+                    ${salesPaymentsData.length > 0 ? `
+                        <ul class="list-disc list-inside text-gray-700">
+                            ${salesPaymentsData.map(item => `<li>${item.name}: $${item.value.toFixed(2)}</li>`).join('')}
+                        </ul>
+                    ` : `<p class="text-center text-gray-600">No hay datos de ventas o pagos en el rango de fechas seleccionado para mostrar proporciones.</p>`}
+                </div>
+
+                <!-- Clients by Current Balance Proportion -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-2xl font-bold text-purple-700 mb-4 text-center">Clientes por Saldo Actual (Proporción)</h3>
+                    ${clientBalancesData.length > 0 ? `
+                        <ul class="list-disc list-inside text-gray-700">
+                            ${clientBalancesData.map(item => `<li>${item.name}: $${item.value.toFixed(2)}</li>`).join('')}
+                        </ul>
+                    ` : `<p class="text-center text-gray-600">No hay clientes con saldos para mostrar en el rango seleccionado.</p>`}
+                </div>
+            `;
+        };
+
+        // --- Core Logic Functions ---
+
+        const selectClient = (client) => {
+            selectedClient = client;
+            renderClientList(); // Re-render to highlight selected client
+            renderClientDetailsSection(); // Render details for the selected client
+        };
+
+        const addClient = async () => {
+            const newClientNameInput = document.getElementById('newClientName');
+            const newClientCelularInput = document.getElementById('newClientCelular');
+            const newClientCitySelect = document.getElementById('newClientCitySelect');
+            const newClientCityInput = document.getElementById('newClientCityInput');
+
+            const name = newClientNameInput.value.trim();
+            const celular = newClientCelularInput.value.trim();
+            let city = newClientCitySelect.value;
+
+            if (!name) {
+                console.error("Faltan datos para añadir cliente (nombre es obligatorio).");
+                return;
+            }
+
+            if (newClientCityInput.classList.contains('hidden')) {
+                // City selected from dropdown or left empty
+                city = newClientCitySelect.value;
+            } else {
+                // New city input is visible
+                if (!newClientCityInput.value.trim()) {
+                    console.error("Por favor, ingresa el nombre de la nueva ciudad.");
+                    return;
+                }
+                city = newClientCityInput.value.trim();
+                await addCityIfNotExists(city); // Ensure the new city is saved
+            }
+
+            try {
+                const clientsCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/clients`);
+                await addDoc(clientsCollectionRef, {
+                    name: name,
+                    city: city,
+                    celular: celular,
+                    createdAt: new Date().toISOString(),
+                    balance: 0
+                });
+                newClientNameInput.value = '';
+                newClientCelularInput.value = '';
+                newClientCitySelect.value = '';
+                newClientCityInput.value = '';
+                newClientCityInput.classList.add('hidden'); // Hide new city input
+                console.log("Cliente añadido con éxito!");
+            } catch (e) {
+                console.error("Error al añadir cliente: ", e);
+            }
+        };
+
+        const openEditClientModal = (client) => {
+            editingClient = client;
+            document.getElementById('editClientNameModal').textContent = client.name;
+            document.getElementById('editClientNameInput').value = client.name;
+            document.getElementById('editClientCelularInput').value = client.celular || '';
+
+            const editClientCitySelect = document.getElementById('editClientCitySelect');
+            editClientCitySelect.innerHTML = '<option value="">Selecciona una Ciudad</option>';
+            cities.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c;
+                option.textContent = c;
+                editClientCitySelect.appendChild(option);
+            });
+            editClientCitySelect.value = client.city;
+
+            const editClientNewCityInput = document.getElementById('editClientNewCityInput');
+            if (!cities.includes(client.city) && client.city) {
+                editClientNewCityInput.value = client.city;
+                editClientNewCityInput.classList.remove('hidden');
+                editClientCitySelect.value = 'addNewCity'; // Set dropdown to "Add new city"
+            } else {
+                editClientNewCityInput.value = '';
+                editClientNewCityInput.classList.add('hidden');
+            }
+
+            editClientCitySelect.onchange = (e) => {
+                if (e.target.value === 'addNewCity') {
+                    editClientNewCityInput.classList.remove('hidden');
+                } else {
+                    editClientNewCityInput.classList.add('hidden');
+                }
+            };
+
+            document.getElementById('clientEditModal').classList.remove('hidden');
+        };
+
+        const saveEditedClient = async () => {
+            const name = document.getElementById('editClientNameInput').value.trim();
+            const celular = document.getElementById('editClientCelularInput').value.trim();
+            const editClientCitySelect = document.getElementById('editClientCitySelect');
+            const editClientNewCityInput = document.getElementById('editClientNewCityInput');
+
+            let city = '';
+            if (editClientNewCityInput.classList.contains('hidden')) {
+                city = editClientCitySelect.value;
+            } else {
+                if (!editClientNewCityInput.value.trim()) {
+                    console.error("Por favor, ingresa el nombre de la nueva ciudad para la edición.");
+                    return;
+                }
+                city = editClientNewCityInput.value.trim();
+                await addCityIfNotExists(city);
+            }
+
+            if (!db || !userId || !editingClient || !name) {
+                console.error("Faltan datos para guardar cliente editado.");
+                return;
+            }
+
+            try {
+                const clientRef = doc(db, `artifacts/${__app_id}/users/${userId}/clients/${editingClient.id}`);
+                await updateDoc(clientRef, {
+                    name: name,
+                    city: city,
+                    celular: celular
+                });
+                selectedClient.name = name; // Update selected client in memory
+                selectedClient.city = city;
+                selectedClient.celular = celular;
+                closeModal('clientEditModal');
+                renderClientList(); // Re-render client list to show changes
+                renderClientDetailsSection(); // Re-render details to show changes
+                console.log("Cliente editado con éxito!");
+            } catch (e) {
+                console.error("Error al guardar cliente editado: ", e);
+            }
+        };
+
+        const deleteClient = async (clientId) => {
+            if (!db || !userId || !clientId) {
+                console.error("No se puede eliminar el cliente. ID no proporcionado.");
+                return;
+            }
+
+            if (!window.confirm('¿Estás seguro de que quieres eliminar este cliente y todos sus pedidos y pagos asociados? Esta acción es irreversible.')) {
+                return;
+            }
+
+            try {
+                const ordersCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/clients/${clientId}/orders`);
+                const ordersSnapshot = await getDocs(ordersCollectionRef);
+                for (const orderDoc of ordersSnapshot.docs) {
+                    await deleteDoc(doc(db, `artifacts/${__app_id}/users/${userId}/clients/${clientId}/orders`, orderDoc.id));
+                }
+
+                const paymentsCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/clients/${clientId}/payments`);
+                const paymentsSnapshot = await getDocs(paymentsCollectionRef);
+                for (const paymentDoc of paymentsSnapshot.docs) {
+                    await deleteDoc(doc(db, `artifacts/${__app_id}/users/${userId}/clients/${clientId}/payments`, paymentDoc.id));
+                }
+
+                const clientRef = doc(db, `artifacts/${__app_id}/users/${userId}/clients/${clientId}`);
+                await deleteDoc(clientRef);
+
+                selectedClient = null; // Deselect the client if it was deleted
+                renderClientList(); // Re-render client list
+                renderClientDetailsSection(); // Clear details section
+                console.log("Cliente y sus datos asociados eliminados con éxito!");
+            } catch (e) {
+                console.error("Error al eliminar cliente: ", e);
+            }
+        };
+
+        const addOrder = async () => {
+            const newOrderDescriptionInput = document.getElementById('newOrderDescription');
+            const newOrderAmountInput = document.getElementById('newOrderAmount');
+            const newOrderDateInput = document.getElementById('newOrderDate');
+
+            const description = newOrderDescriptionInput.value.trim();
+            const amount = parseFloat(newOrderAmountInput.value);
+            const orderDate = newOrderDateInput.value;
+
+            let missingFields = [];
+            if (!description) missingFields.push("Descripción del Pedido");
+            if (isNaN(amount) || amount <= 0) missingFields.push("Monto del Pedido (debe ser un número positivo)");
+            if (!orderDate) missingFields.push("Fecha del Pedido");
+
+            if (missingFields.length > 0) {
+                console.error(`Faltan los siguientes datos para añadir pedido: ${missingFields.join(', ')}.`);
+                return;
+            }
+            if (!db || !userId || !selectedClient) {
+                console.error("No se puede añadir pedido: Faltan datos de la aplicación o cliente seleccionado.");
+                return;
+            }
+
+            try {
+                const ordersCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/clients/${selectedClient.id}/orders`);
+                await addDoc(ordersCollectionRef, {
+                    description: description,
+                    amount: amount,
+                    orderDate: orderDate,
+                    createdAt: new Date().toISOString()
+                });
+                await updateClientBalance(selectedClient.id, -amount);
+                newOrderDescriptionInput.value = '';
+                newOrderAmountInput.value = '';
+                newOrderDateInput.value = getTodayDate();
+                console.log("Pedido añadido con éxito!");
+            } catch (e) {
+                console.error("Error al añadir pedido: ", e);
+            }
+        };
+
+        const openEditOrderModal = (order) => {
+            editingOrder = order;
+            document.getElementById('editOrderDescriptionInput').value = order.description;
+            document.getElementById('editOrderAmountInput').value = order.amount;
+            document.getElementById('editOrderDateInput').value = order.orderDate;
+            document.getElementById('orderEditModal').classList.remove('hidden');
+        };
+
+        const saveEditedOrder = async () => {
+            const description = document.getElementById('editOrderDescriptionInput').value.trim();
+            const newAmount = parseFloat(document.getElementById('editOrderAmountInput').value);
+            const orderDate = document.getElementById('editOrderDateInput').value;
+
+            if (!db || !userId || !editingOrder || !selectedClient || !description || isNaN(newAmount) || newAmount <= 0 || !orderDate) {
+                console.error("Faltan datos para guardar pedido editado o los datos son inválidos.");
+                return;
+            }
+
+            try {
+                const orderRef = doc(db, `artifacts/${__app_id}/users/${userId}/clients/${selectedClient.id}/orders/${editingOrder.id}`);
+                const oldAmount = editingOrder.amount;
+                const amountChange = oldAmount - newAmount;
+
+                await updateDoc(orderRef, {
+                    description: description,
+                    amount: newAmount,
+                    orderDate: orderDate
+                });
+                await updateClientBalance(selectedClient.id, amountChange);
+                closeModal('orderEditModal');
+                console.log("Pedido editado con éxito!");
+            } catch (e) {
+                console.error("Error al guardar pedido editado: ", e);
+            }
+        };
+
+        const deleteOrder = async (orderId, orderAmount) => {
+            if (!db || !userId || !selectedClient || !orderId) {
+                console.error("No se puede eliminar el pedido. ID o cliente no proporcionado.");
+                return;
+            }
+
+            if (!window.confirm('¿Estás seguro de que quieres eliminar este pedido? El saldo del cliente se ajustará.')) {
+                return;
+            }
+
+            try {
+                const orderRef = doc(db, `artifacts/${__app_id}/users/${userId}/clients/${selectedClient.id}/orders/${orderId}`);
+                await deleteDoc(orderRef);
+                await updateClientBalance(selectedClient.id, orderAmount); // Add order amount back to balance
+                console.log("Pedido eliminado con éxito!");
+            } catch (e) {
+                console.error("Error al eliminar pedido: ", e.message, e);
+            }
+        };
+
+        const addPayment = async () => {
+            const newPaymentAmountInput = document.getElementById('newPaymentAmount');
+            const newPaymentDateInput = document.getElementById('newPaymentDate');
+
+            const amount = parseFloat(newPaymentAmountInput.value);
+            const paymentDate = newPaymentDateInput.value;
+
+            let missingFields = [];
+            if (isNaN(amount) || amount <= 0) missingFields.push("Monto del Pago (debe ser un número positivo)");
+            if (!paymentDate) missingFields.push("Fecha del Pago");
+
+            if (missingFields.length > 0) {
+                console.error(`Faltan los siguientes datos para registrar pago: ${missingFields.join(', ')}.`);
+                return;
+            }
+            if (!db || !userId || !selectedClient) {
+                console.error("No se puede registrar pago: Faltan datos de la aplicación o cliente seleccionado.");
+                return;
+            }
+
+            try {
+                const paymentsCollectionRef = collection(db, `artifacts/${__app_id}/users/${userId}/clients/${selectedClient.id}/payments`);
+                await addDoc(paymentsCollectionRef, {
+                    amount: amount,
+                    paymentDate: paymentDate,
+                    createdAt: new Date().toISOString()
+                });
+                await updateClientBalance(selectedClient.id, amount);
+                newPaymentAmountInput.value = '';
+                newPaymentDateInput.value = getTodayDate();
+                console.log("Pago registrado con éxito!");
+            } catch (e) {
+                console.error("Error al registrar pago: ", e);
+            }
+        };
+
+        const openEditPaymentModal = (payment) => {
+            editingPayment = payment;
+            document.getElementById('editPaymentAmountInput').value = payment.amount;
+            document.getElementById('editPaymentDateInput').value = payment.paymentDate;
+            document.getElementById('paymentEditModal').classList.remove('hidden');
+        };
+
+        const saveEditedPayment = async () => {
+            const newAmount = parseFloat(document.getElementById('editPaymentAmountInput').value);
+            const paymentDate = document.getElementById('editPaymentDateInput').value;
+
+            if (!db || !userId || !editingPayment || !selectedClient || isNaN(newAmount) || newAmount <= 0 || !paymentDate) {
+                console.error("Faltan datos para guardar pago editado o los datos son inválidos.");
+                return;
+            }
+
+            try {
+                const paymentRef = doc(db, `artifacts/${__app_id}/users/${userId}/clients/${selectedClient.id}/payments/${editingPayment.id}`);
+                const oldAmount = editingPayment.amount;
+                const amountChange = newAmount - oldAmount;
+
+                await updateDoc(paymentRef, {
+                    amount: newAmount,
+                    paymentDate: paymentDate
+                });
+                await updateClientBalance(selectedClient.id, amountChange);
+                closeModal('paymentEditModal');
+                console.log("Pago editado con éxito!");
+            } catch (e) {
+                console.error("Error al guardar pago editado: ", e);
+            }
+        };
+
+        // --- Modal Control ---
+        const closeModal = (modalId) => {
+            document.getElementById(modalId).classList.add('hidden');
+            editingClient = null;
+            editingOrder = null;
+            editingPayment = null;
+        };
+
+        // --- View Switching ---
+        const switchView = (viewName) => {
+            const clientsBtn = document.getElementById('clientsViewBtn');
+            const reportsBtn = document.getElementById('reportsViewBtn');
+
+            if (viewName === 'clients') {
+                clientsBtn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                clientsBtn.classList.add('bg-pink-600', 'text-white', 'shadow-md');
+                reportsBtn.classList.remove('bg-purple-600', 'text-white', 'shadow-md');
+                reportsBtn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                renderClientManagementView();
+            } else if (viewName === 'reports') {
+                reportsBtn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                reportsBtn.classList.add('bg-purple-600', 'text-white', 'shadow-md');
+                clientsBtn.classList.remove('bg-pink-600', 'text-white', 'shadow-md');
+                clientsBtn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                renderReportsView();
+            }
+        };
+
+        const renderCurrentView = () => {
+            const clientsBtn = document.getElementById('clientsViewBtn');
+            if (clientsBtn.classList.contains('bg-pink-600')) {
+                renderClientManagementView();
+            } else {
+                renderReportsView();
+            }
+        };
+
+        // --- Event Listeners for Modals ---
+        document.getElementById('cancelEditClientBtn').onclick = () => closeModal('clientEditModal');
+        document.getElementById('saveEditedClientBtn').onclick = saveEditedClient;
+        document.getElementById('cancelEditOrderBtn').onclick = () => closeModal('orderEditModal');
+        document.getElementById('saveEditedOrderBtn').onclick = saveEditedOrder;
+        document.getElementById('cancelEditPaymentBtn').onclick = () => closeModal('paymentEditModal');
+        document.getElementById('saveEditedPaymentBtn').onclick = saveEditedPayment;
+
+        // --- Global View Switchers ---
+        document.getElementById('clientsViewBtn').onclick = () => switchView('clients');
+        document.getElementById('reportsViewBtn').onclick = () => switchView('reports');
+
+        // Initialize on window load
+        window.onload = () => {
+            // Set default dates for report filters on load
+            const today = getTodayDate();
+            const thirtyDaysAgo = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0];
+            reportStartDate = thirtyDaysAgo;
+            reportEndDate = today;
+
+            initFirebase();
+        };
+    </script>
+</body>
+</html>
